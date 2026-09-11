@@ -167,8 +167,8 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label">Paste Attendee List (CSV Format: Name, RollNo, Email, WhatsApp, Amount)</label>
-          <textarea id="batchInputText" class="form-control" rows="8" style="font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5;" placeholder="Zainab Ahmed, CS-2024-001, zainab@example.com, +923001234567, 2500&#10;Ali Khan, CS-2024-002, ali@example.com, +923001234568, 2500&#10;Usman Tariq, CS-2024-003, usman@example.com, +923001234569, 2500"></textarea>
+          <label class="form-label">Paste Attendee List (Key-Value Format or CSV)</label>
+          <textarea id="batchInputText" class="form-control" rows="10" style="font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5;" placeholder="Name: Zainab Ahmed&#10;Roll no: CS-2024-001&#10;Email: zainab@example.com&#10;Phone: +923001234567&#10;Amount Paid: 2500&#10;&#10;Name: Ali Khan&#10;Roll no: CS-2024-002&#10;Email: ali@example.com&#10;Phone: +923001234568&#10;Amount Paid: 2500"></textarea>
         </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
@@ -356,21 +356,63 @@
       const text = document.getElementById('batchInputText').value.trim();
       if (!text) return [];
 
-      const lines = text.split(/\r?\n/);
       const items = [];
+      const isKeyValueFormat = /Name\s*:/i.test(text) || /Roll\s*no\s*:/i.test(text);
 
-      lines.forEach(line => {
-        const parts = line.split(',').map(p => p.trim());
-        if (parts.length >= 2 && parts[0] && parts[1]) {
-          items.push({
-            name: parts[0],
-            rollNo: parts[1].toUpperCase(),
-            email: parts[2] || '',
-            whatsapp: parts[3] || '',
-            amount: Number(parts[4]) || 2500
-          });
+      if (isKeyValueFormat) {
+        const lines = text.split(/\r?\n/);
+        let currentItem = null;
+
+        lines.forEach(line => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+
+          const colonIdx = trimmed.indexOf(':');
+          if (colonIdx !== -1) {
+            const key = trimmed.substring(0, colonIdx).trim().toLowerCase();
+            const val = trimmed.substring(colonIdx + 1).trim();
+
+            if (key === 'name') {
+              if (currentItem && (currentItem.name || currentItem.rollNo)) {
+                items.push(currentItem);
+              }
+              currentItem = { name: val, rollNo: '', email: '', whatsapp: '', amount: 2500 };
+            } else if (currentItem) {
+              if (key.includes('roll')) {
+                currentItem.rollNo = val.toUpperCase();
+              } else if (key.includes('email')) {
+                currentItem.email = val;
+              } else if (key.includes('phone') || key.includes('whatsapp') || key.includes('mobile') || key.includes('contact')) {
+                currentItem.whatsapp = val;
+              } else if (key.includes('amount') || key.includes('price') || key.includes('paid')) {
+                const num = Number(val.replace(/[^0-9.]/g, ''));
+                if (num > 0) currentItem.amount = num;
+              }
+            }
+          }
+        });
+
+        if (currentItem && (currentItem.name || currentItem.rollNo)) {
+          items.push(currentItem);
         }
-      });
+
+      } else {
+        // CSV Format Fallback
+        const lines = text.split(/\r?\n/);
+        lines.forEach(line => {
+          const parts = line.split(',').map(p => p.trim());
+          if (parts.length >= 2 && parts[0] && parts[1]) {
+            items.push({
+              name: parts[0],
+              rollNo: parts[1].toUpperCase(),
+              email: parts[2] || '',
+              whatsapp: parts[3] || '',
+              amount: Number(parts[4]) || 2500
+            });
+          }
+        });
+      }
+
       return items;
     }
 
@@ -385,21 +427,28 @@
     });
 
     function fillSampleBatch() {
-      const samples = [
-        'Zainab Ahmed, CS-2024-001, zainab@example.com, +923001234567, 2500',
-        'Ali Khan, CS-2024-002, ali@example.com, +923001234568, 2500',
-        'Usman Tariq, CS-2024-003, usman@example.com, +923001234569, 2500',
-        'Fatima Noor, CS-2024-004, fatima@example.com, +923001234570, 2500',
-        'Bilal Hassan, CS-2024-005, bilal@example.com, +923001234571, 2500',
-        'Sana Malik, CS-2024-006, sana@example.com, +923001234572, 2500',
-        'Hamza Shah, CS-2024-007, hamza@example.com, +923001234573, 2500',
-        'Ayesha Siddiqui, CS-2024-008, ayesha@example.com, +923001234574, 2500',
-        'Omar Farooq, CS-2024-009, omar@example.com, +923001234575, 2500',
-        'Mariam Raza, CS-2024-010, mariam@example.com, +923001234576, 2500'
-      ];
-      document.getElementById('batchInputText').value = samples.join('\n');
+      const sampleText = 
+`Name: Zainab Ahmed
+Roll no: CS-2024-001
+Email: zainab@example.com
+Phone: +923001234567
+Amount Paid: 2500
+
+Name: Ali Khan
+Roll no: CS-2024-002
+Email: ali@example.com
+Phone: +923001234568
+Amount Paid: 2500
+
+Name: Usman Tariq
+Roll no: CS-2024-003
+Email: usman@example.com
+Phone: +923001234569
+Amount Paid: 2500`;
+
+      document.getElementById('batchInputText').value = sampleText;
       updateDetectedBatchCount();
-      AppUtils.showToast('10 sample attendees loaded!', 'info');
+      AppUtils.showToast('Sample attendee blocks loaded!', 'info');
     }
 
     function handleCsvFileUpload(e) {
