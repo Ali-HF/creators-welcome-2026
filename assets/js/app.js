@@ -237,24 +237,77 @@ window.AppUtils = (function () {
     }
   }
 
+  // Ensure Settings Modal exists on every page
+  function ensureSettingsModal() {
+    if (document.getElementById('settingsModal')) return;
+
+    const modalHtml = `
+      <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3 class="modal-title">⚙️ Backend API Configuration</h3>
+            <button class="btn btn-ghost" data-close-modal style="padding: 0.25rem 0.5rem;">✕</button>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+            Paste your Google Apps Script Web App Deployment URL below to connect to live Google Sheets backend.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Google Apps Script Web App URL</label>
+            <input type="text" id="inputScriptUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+            <button class="btn btn-secondary" data-close-modal>Cancel</button>
+            <button class="btn btn-primary" onclick="AppUtils.saveSettings()">Save & Connect</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  function saveSettings() {
+    const input = document.getElementById('inputScriptUrl');
+    const url = input ? input.value.trim() : '';
+    localStorage.setItem('cw26_script_url', url);
+    updateConnectionBadge();
+    const modal = document.getElementById('settingsModal');
+    if (modal) modal.classList.remove('open');
+    showToast('Backend API URL saved! Connecting to Google Sheet...', 'success');
+    if (typeof loadDashboardData === 'function') {
+      loadDashboardData();
+    }
+  }
+
   // Global Init
   document.addEventListener('DOMContentLoaded', () => {
+    ensureSettingsModal();
     updateConnectionBadge();
+
+    const input = document.getElementById('inputScriptUrl');
+    if (input) {
+      input.value = localStorage.getItem('cw26_script_url') || '';
+    }
 
     const badge = document.getElementById('connectionStatusBadge');
     if (badge) {
       badge.addEventListener('click', () => {
+        ensureSettingsModal();
+        const input = document.getElementById('inputScriptUrl');
+        if (input) input.value = localStorage.getItem('cw26_script_url') || '';
         const modal = document.getElementById('settingsModal');
         if (modal) modal.classList.add('open');
       });
     }
 
     // Modal dismiss listeners
-    document.querySelectorAll('[data-close-modal]').forEach(el => {
-      el.addEventListener('click', () => {
-        const modal = el.closest('.modal-overlay');
+    document.addEventListener('click', (e) => {
+      if (e.target.matches('[data-close-modal]') || e.target.closest('[data-close-modal]')) {
+        const modal = e.target.closest('.modal-overlay');
         if (modal) modal.classList.remove('open');
-      });
+      }
     });
   });
 
@@ -264,6 +317,7 @@ window.AppUtils = (function () {
     playWarningTone,
     showToast,
     downloadPassAsImage,
-    updateConnectionBadge
+    updateConnectionBadge,
+    saveSettings
   };
 })();

@@ -61,8 +61,7 @@ window.CW26Api = (function () {
 
   function isMockMode() {
     const url = getScriptUrl();
-    const isFileProtocol = window.location.protocol === 'file:';
-    return isFileProtocol || !url || url.length < 10;
+    return !url || url.length < 10 || !url.startsWith('http');
   }
 
   /**
