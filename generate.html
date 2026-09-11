@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Creators Welcome 2026 — Digital Pass Generator</title>
   <meta name="description" content="Issue high-resolution event pass credentials for Creators Welcome 2026">
-  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/styles.css?v=3.0">
 </head>
 <body>
 
@@ -17,14 +17,14 @@
         <div>
           <div class="brand-title">CREATORS WELCOME</div>
         </div>
-        <span class="brand-badge">2026 OPS</span>
+        <span class="brand-badge" style="background: var(--dark-main); color: var(--white); font-size: 0.7rem; padding: 2px 8px; border-radius: var(--radius-pill); font-weight: 700; margin-left: 4px;">2026 OPS</span>
       </a>
 
       <div class="nav-links">
         <a href="index.html" class="nav-item">📊 Dashboard</a>
         <a href="generate.html" class="nav-item active">🎟️ Issue Pass</a>
         <a href="scan.html" class="nav-item">⚡ Gate Scanner</a>
-        <div id="connectionStatusBadge" class="connection-badge mock">
+        <div id="connectionStatusBadge" class="connection-badge mock" onclick="document.getElementById('settingsModal') && document.getElementById('settingsModal').classList.add('open')">
           <span class="pulse-dot"></span> CHECKING...
         </div>
       </div>
@@ -48,7 +48,7 @@
       
       <!-- Registration Form -->
       <div class="card">
-        <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--white); margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--dark-main); margin-bottom: 1.25rem;">
           📋 Attendee Registration Form
         </h2>
 
@@ -142,8 +142,28 @@
 
   </main>
 
-  <script src="assets/js/app.js?v=2.0"></script>
-  <script src="assets/js/api.js?v=2.0"></script>
+  <!-- Mobile Bottom Navigation Bar -->
+  <div class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <span class="nav-icon">📊</span>
+      <span>Dashboard</span>
+    </a>
+    <a href="generate.html" class="bottom-nav-item active">
+      <span class="nav-icon">🎟️</span>
+      <span>Issue Pass</span>
+    </a>
+    <a href="scan.html" class="bottom-nav-item">
+      <span class="nav-icon">⚡</span>
+      <span>Scanner</span>
+    </a>
+    <a href="#" onclick="document.getElementById('settingsModal') && document.getElementById('settingsModal').classList.add('open')" class="bottom-nav-item">
+      <span class="nav-icon">⚙️</span>
+      <span>Settings</span>
+    </a>
+  </div>
+
+  <script src="assets/js/app.js?v=3.0"></script>
+  <script src="assets/js/api.js?v=3.0"></script>
   <script>
     let currentPassId = '#CW26-PREVIEW';
     let currentPassData = null;

@@ -67,6 +67,11 @@ window.AppUtils = (function () {
 
       osc.start(now);
       osc.stop(now + 0.4);
+    } catch (e) {
+      console.log('Audio playback prevented or unsupported', e);
+    }
+  }
+
   function playScanBeep() {
     try {
       const ctx = getAudioContext();

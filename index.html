@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Creators Welcome 2026 — Operations Dashboard</title>
   <meta name="description" content="Event Pass Operations & Live Gate Admission Web Application for Creators Welcome 2026">
-  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/styles.css?v=3.0">
 </head>
 <body>
 
@@ -17,14 +17,14 @@
         <div>
           <div class="brand-title">CREATORS WELCOME</div>
         </div>
-        <span class="brand-badge">2026 OPS</span>
+        <span class="brand-badge" style="background: var(--dark-main); color: var(--white); font-size: 0.7rem; padding: 2px 8px; border-radius: var(--radius-pill); font-weight: 700; margin-left: 4px;">2026 OPS</span>
       </a>
 
       <div class="nav-links">
         <a href="index.html" class="nav-item active">📊 Dashboard</a>
         <a href="generate.html" class="nav-item">🎟️ Issue Pass</a>
         <a href="scan.html" class="nav-item">⚡ Gate Scanner</a>
-        <div id="connectionStatusBadge" class="connection-badge mock" title="Click to configure API">
+        <div id="connectionStatusBadge" class="connection-badge mock" title="Click to configure API" onclick="document.getElementById('settingsModal').classList.add('open')">
           <span class="pulse-dot"></span> CHECKING...
         </div>
       </div>
@@ -39,7 +39,7 @@
         <h1 class="page-title">Event Operations Dashboard</h1>
         <p class="page-subtitle">Real-time gate admission metrics, revenue analytics, and attendee registry.</p>
       </div>
-      <div style="display: flex; gap: 0.75rem;">
+      <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
         <button class="btn btn-secondary" onclick="loadDashboardData()">🔄 Refresh Data</button>
         <a href="generate.html" class="btn btn-primary">➕ Issue New Pass</a>
         <a href="scan.html" class="btn btn-emerald">📱 Open Gate Scanner</a>
@@ -62,7 +62,7 @@
           <span class="metric-label">Checked-In at Gate</span>
           <div class="metric-icon">🟢</div>
         </div>
-        <div class="metric-value" id="valScannedCount" style="color: var(--emerald-500);">0</div>
+        <div class="metric-value" id="valScannedCount" style="color: var(--emerald-600);">0</div>
         <div class="metric-sub">Validated attendee entry</div>
       </div>
 
@@ -100,7 +100,7 @@
     <div class="card">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--white);">Live Attendee Directory</h2>
+          <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--dark-main);">Live Attendee Directory</h2>
           <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time status tracking across all gates</p>
         </div>
         
@@ -135,6 +135,26 @@
 
   </main>
 
+  <!-- Mobile Bottom Navigation Bar -->
+  <div class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item active">
+      <span class="nav-icon">📊</span>
+      <span>Dashboard</span>
+    </a>
+    <a href="generate.html" class="bottom-nav-item">
+      <span class="nav-icon">🎟️</span>
+      <span>Issue Pass</span>
+    </a>
+    <a href="scan.html" class="bottom-nav-item">
+      <span class="nav-icon">⚡</span>
+      <span>Scanner</span>
+    </a>
+    <a href="#" onclick="document.getElementById('settingsModal').classList.add('open')" class="bottom-nav-item">
+      <span class="nav-icon">⚙️</span>
+      <span>Settings</span>
+    </a>
+  </div>
+
   <!-- Settings Modal for Google Apps Script API URL -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-content">
@@ -158,8 +178,8 @@
     </div>
   </div>
 
-  <script src="assets/js/app.js?v=2.0"></script>
-  <script src="assets/js/api.js?v=2.0"></script>
+  <script src="assets/js/app.js?v=3.0"></script>
+  <script src="assets/js/api.js?v=3.0"></script>
   <script>
     let allPassesCache = [];
 
