@@ -44,12 +44,23 @@
       </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 2rem; align-items: start;">
+    <!-- Mode Selector Pills -->
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+      <button id="tabBtnSingle" class="btn btn-dark" onclick="switchGenTab('single')">
+        👤 Single Pass Issue
+      </button>
+      <button id="tabBtnBatch" class="btn btn-secondary" onclick="switchGenTab('batch')">
+        ⚡ Bulk / Batch Generator (10–100+ Passes)
+      </button>
+    </div>
+
+    <!-- SINGLE PASS VIEW -->
+    <div id="viewSinglePass" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 2rem; align-items: start;">
       
       <!-- Registration Form -->
       <div class="card">
         <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--dark-main); margin-bottom: 1.25rem;">
-          📋 Attendee Registration Form
+          📋 Single Attendee Registration
         </h2>
 
         <form id="passForm" onsubmit="handleGeneratePass(event)">
@@ -138,6 +149,71 @@
 
       </div>
 
+    </div>
+
+    <!-- BULK / BATCH GENERATOR VIEW -->
+    <div id="viewBatchPass" style="display: none; max-width: 800px; margin: 0 auto;">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--dark-main);">⚡ Bulk / Batch Pass Generator</h2>
+            <p style="font-size: 0.85rem; color: var(--slate-500);">Issue 10 to 100+ event credentials in a single click with automated email delivery.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="fillSampleBatch()" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">⚡ Fill 10 Sample Rows</button>
+            <input type="file" id="batchCsvFile" accept=".csv, .txt" style="display:none;" onchange="handleCsvFileUpload(event)">
+            <button class="btn btn-secondary" onclick="document.getElementById('batchCsvFile').click()" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">📂 Load CSV File</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Paste Attendee List (CSV Format: Name, RollNo, Email, WhatsApp, Amount)</label>
+          <textarea id="batchInputText" class="form-control" rows="8" style="font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5;" placeholder="Zainab Ahmed, CS-2024-001, zainab@example.com, +923001234567, 2500&#10;Ali Khan, CS-2024-002, ali@example.com, +923001234568, 2500&#10;Usman Tariq, CS-2024-003, usman@example.com, +923001234569, 2500"></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+          <div id="batchDetectedCount" style="font-size: 0.85rem; font-weight: 700; color: var(--slate-500);">
+            Ready: 0 attendees detected
+          </div>
+          <button id="btnSubmitBatch" class="btn btn-emerald btn-lg" onclick="executeBatchGeneration()">
+            ⚡ Issue All Passes in Bulk
+          </button>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div id="batchProgressBox" style="display: none; margin-top: 1.5rem; padding: 1.25rem; background: var(--bg-main); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;">
+            <span id="batchProgressTitle">Processing passes...</span>
+            <span id="batchProgressPct">0%</span>
+          </div>
+          <div class="progress-bar-container" style="height: 10px;">
+            <div class="progress-bar-fill" id="batchProgressFill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Generated Batch Results Table -->
+        <div id="batchResultsBox" style="display: none; margin-top: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 1rem; font-weight: 800; color: var(--dark-main);">🎉 Batch Generation Complete</h3>
+            <button class="btn btn-secondary" onclick="downloadBatchCsv()" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">📥 Export Summary CSV</button>
+          </div>
+          <div class="table-wrapper">
+            <table class="table" id="batchResultsTable">
+              <thead>
+                <tr>
+                  <th>Pass ID</th>
+                  <th>Attendee Name</th>
+                  <th>Roll No</th>
+                  <th>Email Sent</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="batchResultsTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
     </div>
 
   </main>
@@ -249,6 +325,176 @@
       );
 
       window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+    }
+
+    /* ==========================================================================
+       BULK / BATCH GENERATION JAVASCRIPT LOGIC
+       ========================================================================== */
+    let lastBatchGeneratedPasses = [];
+
+    function switchGenTab(tab) {
+      const btnSingle = document.getElementById('tabBtnSingle');
+      const btnBatch = document.getElementById('tabBtnBatch');
+      const viewSingle = document.getElementById('viewSinglePass');
+      const viewBatch = document.getElementById('viewBatchPass');
+
+      if (tab === 'single') {
+        btnSingle.className = 'btn btn-dark';
+        btnBatch.className = 'btn btn-secondary';
+        viewSingle.style.display = 'grid';
+        viewBatch.style.display = 'none';
+      } else {
+        btnSingle.className = 'btn btn-secondary';
+        btnBatch.className = 'btn btn-dark';
+        viewSingle.style.display = 'none';
+        viewBatch.style.display = 'block';
+        updateDetectedBatchCount();
+      }
+    }
+
+    function parseBatchInput() {
+      const text = document.getElementById('batchInputText').value.trim();
+      if (!text) return [];
+
+      const lines = text.split(/\r?\n/);
+      const items = [];
+
+      lines.forEach(line => {
+        const parts = line.split(',').map(p => p.trim());
+        if (parts.length >= 2 && parts[0] && parts[1]) {
+          items.push({
+            name: parts[0],
+            rollNo: parts[1].toUpperCase(),
+            email: parts[2] || '',
+            whatsapp: parts[3] || '',
+            amount: Number(parts[4]) || 2500
+          });
+        }
+      });
+      return items;
+    }
+
+    function updateDetectedBatchCount() {
+      const items = parseBatchInput();
+      const el = document.getElementById('batchDetectedCount');
+      if (el) el.innerText = `Ready: ${items.length} attendees detected`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('batchInputText')?.addEventListener('input', updateDetectedBatchCount);
+    });
+
+    function fillSampleBatch() {
+      const samples = [
+        'Zainab Ahmed, CS-2024-001, zainab@example.com, +923001234567, 2500',
+        'Ali Khan, CS-2024-002, ali@example.com, +923001234568, 2500',
+        'Usman Tariq, CS-2024-003, usman@example.com, +923001234569, 2500',
+        'Fatima Noor, CS-2024-004, fatima@example.com, +923001234570, 2500',
+        'Bilal Hassan, CS-2024-005, bilal@example.com, +923001234571, 2500',
+        'Sana Malik, CS-2024-006, sana@example.com, +923001234572, 2500',
+        'Hamza Shah, CS-2024-007, hamza@example.com, +923001234573, 2500',
+        'Ayesha Siddiqui, CS-2024-008, ayesha@example.com, +923001234574, 2500',
+        'Omar Farooq, CS-2024-009, omar@example.com, +923001234575, 2500',
+        'Mariam Raza, CS-2024-010, mariam@example.com, +923001234576, 2500'
+      ];
+      document.getElementById('batchInputText').value = samples.join('\n');
+      updateDetectedBatchCount();
+      AppUtils.showToast('10 sample attendees loaded!', 'info');
+    }
+
+    function handleCsvFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const content = event.target.result;
+        document.getElementById('batchInputText').value = content;
+        updateDetectedBatchCount();
+        AppUtils.showToast(`Loaded file: ${file.name}`, 'success');
+      };
+      reader.readAsText(file);
+    }
+
+    async function executeBatchGeneration() {
+      const items = parseBatchInput();
+      if (!items || items.length === 0) {
+        AppUtils.showToast('Please enter or upload attendee list (Name, RollNo...)', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitBatch');
+      const progressBox = document.getElementById('batchProgressBox');
+      const progressFill = document.getElementById('batchProgressFill');
+      const progressTitle = document.getElementById('batchProgressTitle');
+      const progressPct = document.getElementById('batchProgressPct');
+
+      btn.disabled = true;
+      btn.innerText = `⌛ Generating ${items.length} Passes...`;
+      progressBox.style.display = 'block';
+      progressFill.style.width = '30%';
+      progressTitle.innerText = `Issuing ${items.length} passes & dispatching emails...`;
+      progressPct.innerText = '30%';
+
+      try {
+        const res = await CW26Api.callApi('batchGeneratePasses', { items: items });
+
+        progressFill.style.width = '100%';
+        progressPct.innerText = '100%';
+
+        if (res && res.success && res.passes) {
+          lastBatchGeneratedPasses = res.passes;
+          renderBatchResults(res.passes);
+
+          AppUtils.playSuccessTone();
+          AppUtils.showToast(`Successfully issued ${res.count} passes (${res.startPassId} to ${res.endPassId})!`, 'success');
+        } else {
+          AppUtils.showToast(res ? (res.message || 'Batch generation failed') : 'Batch generation failed', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        AppUtils.showToast('Error connecting to batch API server', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '⚡ Issue All Passes in Bulk';
+      }
+    }
+
+    function renderBatchResults(passes) {
+      const box = document.getElementById('batchResultsBox');
+      const tbody = document.getElementById('batchResultsTbody');
+
+      box.style.display = 'block';
+      tbody.innerHTML = passes.map(p => `
+        <tr>
+          <td style="font-family: var(--font-mono); font-weight: 700; color: var(--emerald-600);">${p.passId}</td>
+          <td style="font-weight: 600;">${escapeHtml(p.name)}</td>
+          <td style="font-family: var(--font-mono);">${p.rollNo}</td>
+          <td>${p.email ? '📧 Dispatched' : '—'}</td>
+          <td><span class="status-badge unused">⏳ UNUSED</span></td>
+        </tr>
+      `).join('');
+    }
+
+    function downloadBatchCsv() {
+      if (!lastBatchGeneratedPasses || lastBatchGeneratedPasses.length === 0) return;
+
+      let csvContent = 'data:text/csv;charset=utf-8,Pass ID,Name,Roll Number,Email,WhatsApp,Status,Created ISO\n';
+      lastBatchGeneratedPasses.forEach(p => {
+        csvContent += `"${p.passId}","${p.name}","${p.rollNo}","${p.email}","${p.whatsapp}","unused","${p.createdIso}"\n`;
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `CW26_Batch_Passes_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
   </script>
 </body>

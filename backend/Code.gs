@@ -39,6 +39,8 @@ function handleRequest(e) {
 
     if (action === 'generatePass') {
       responseData = generatePass(contents);
+    } else if (action === 'batchGeneratePasses') {
+      responseData = batchGeneratePasses(contents);
     } else if (action === 'checkAndScanPass') {
       responseData = checkAndScanPass(contents);
     } else if (action === 'getStats') {
@@ -462,6 +464,163 @@ function prettifySheet() {
   } catch (e) {
     return { success: false, error: e.toString() };
   }
+}
+
+/**
+ * Action 5: batchGeneratePasses
+ * Generates multiple passes atomically in bulk.
+ * Accepts data.items = [{ name, rollNo, amount, email, whatsapp }, ...]
+ */
+function batchGeneratePasses(data) {
+  var rawItems = data.items || [];
+  if (typeof rawItems === 'string') {
+    try { rawItems = JSON.parse(rawItems); } catch(e){}
+  }
+
+  if (!rawItems || !rawItems.length) {
+    return { success: false, message: 'No attendee items provided for batch generation.' };
+  }
+
+  var sheet = getOrCreateSheet();
+  var generatedPasses = [];
+  var rowsToAppend = [];
+  var nowIso = new Date().toISOString();
+
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(15000); // 15s wait for bulk lock
+
+    var lastRow = sheet.getLastRow();
+    var startCount = lastRow > 1 ? (lastRow - 1) + 1 : 1;
+
+    for (var i = 0; i < rawItems.length; i++) {
+      var item = rawItems[i] || {};
+      var count = startCount + i;
+      var passId = '#CW26-' + padNumber(count, 3);
+      var name = (item.name || 'Attendee').toString().trim();
+      var rollNo = (item.rollNo || '').toString().trim().toUpperCase();
+      var amount = Number(item.amount) || DEFAULT_PRICE;
+      var email = (item.email || '').toString().trim();
+      var whatsapp = (item.whatsapp || '').toString().trim();
+      var status = 'unused';
+
+      rowsToAppend.push([
+        passId,
+        name,
+        rollNo,
+        amount,
+        status,
+        nowIso,
+        '',
+        email,
+        whatsapp
+      ]);
+
+      generatedPasses.push({
+        passId: passId,
+        name: name,
+        rollNo: rollNo,
+        amount: amount,
+        status: status,
+        createdIso: nowIso,
+        email: email,
+        whatsapp: whatsapp
+      });
+    }
+
+    if (rowsToAppend.length > 0) {
+      var startRowIndex = lastRow + 1;
+      sheet.getRange(startRowIndex, 1, rowsToAppend.length, 9).setValues(rowsToAppend);
+    }
+
+  } catch (lockErr) {
+    return { success: false, message: 'Could not acquire lock for batch generation: ' + lockErr.toString() };
+  } finally {
+    lock.releaseLock();
+  }
+
+  // Soft dispatch emails outside lock
+  var emailsSentCount = 0;
+  for (var j = 0; j < generatedPasses.length; j++) {
+    var p = generatedPasses[j];
+    if (p.email && p.email.length > 3) {
+      try {
+        var res = sendPassEmail(p.email, p.name, p.rollNo, p.passId);
+        if (res.success) emailsSentCount++;
+      } catch(e){}
+    }
+  }
+
+  return {
+    success: true,
+    count: generatedPasses.length,
+    startPassId: generatedPasses[0].passId,
+    endPassId: generatedPasses[generatedPasses.length - 1].passId,
+    emailsSentCount: emailsSentCount,
+    passes: generatedPasses
+  };
+}
+
+/**
+ * Adds custom menu to Google Sheets for 1-click batch generation directly inside the sheet
+ */
+function onOpen() {
+  try {
+    var ui = SpreadsheetApp.getUi();
+    ui.createMenu('🎟️ Creators Welcome 2026')
+      .addItem('⚡ Batch Process Sheet Rows (Assign Pass IDs & Send Emails)', 'batchProcessSheetRows')
+      .addItem('🎨 Format Sheet Layout', 'prettifySheet')
+      .addToUi();
+  } catch(e) {}
+}
+
+/**
+ * Iterates over rows in the Google Sheet that have Name & Roll No but no Pass ID yet,
+ * generates pass IDs, and sends emails!
+ */
+function batchProcessSheetRows() {
+  var sheet = getOrCreateSheet();
+  var lastRow = sheet.getLastRow();
+  var ui = SpreadsheetApp.getUi();
+
+  if (lastRow < 2) {
+    ui.alert('No data rows found in sheet. Please add Name in Column B and Roll Number in Column C.');
+    return;
+  }
+
+  var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  var processedCount = 0;
+  var emailsCount = 0;
+  var nowIso = new Date().toISOString();
+
+  for (var i = 0; i < values.length; i++) {
+    var rowPassId = (values[i][0] || '').toString().trim();
+    var name = (values[i][1] || '').toString().trim();
+    var rollNo = (values[i][2] || '').toString().trim();
+    var email = (values[i][7] || '').toString().trim();
+    var rowIndex = i + 2;
+
+    // If row has Name/Roll but missing Pass ID, process it!
+    if (!rowPassId && (name || rollNo)) {
+      var passId = '#CW26-' + padNumber(rowIndex - 1, 3);
+      var status = values[i][4] || 'unused';
+      var amount = values[i][3] || DEFAULT_PRICE;
+
+      sheet.getRange(rowIndex, 1).setValue(passId);
+      sheet.getRange(rowIndex, 4).setValue(amount);
+      sheet.getRange(rowIndex, 5).setValue(status);
+      sheet.getRange(rowIndex, 6).setValue(nowIso);
+
+      processedCount++;
+
+      if (email && email.length > 3) {
+        var res = sendPassEmail(email, name, rollNo, passId);
+        if (res.success) emailsCount++;
+      }
+    }
+  }
+
+  ui.alert('✅ Batch Processing Complete!\n\nPass IDs Assigned: ' + processedCount + '\nEmails Dispatched: ' + emailsCount);
 }
 
 /**
