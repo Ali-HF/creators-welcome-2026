@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Creators Welcome 2026 — Gate Admission Scanner</title>
-  <meta name="description" content="High-concurrency live gate scanner and pass verification for Creators Welcome 2026">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Creators Welcome 2026 — Mobile Gate Scanner</title>
+  <meta name="description" content="Single-screen mobile gate scanner for Creators Welcome 2026">
   <link rel="stylesheet" href="assets/css/styles.css">
   <!-- HTML5 QR Code Scanner Library -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
-<body>
+<body style="overflow-x: hidden;">
 
   <!-- Navigation Bar -->
   <nav class="navbar">
@@ -23,132 +23,75 @@
       </a>
 
       <div class="nav-links">
-        <a href="index.html" class="nav-item">📊 Dashboard</a>
-        <a href="generate.html" class="nav-item">🎟️ Issue Pass</a>
-        <a href="scan.html" class="nav-item active">⚡ Gate Scanner</a>
+        <a href="index.html" class="nav-item">📊</a>
+        <a href="generate.html" class="nav-item">🎟️</a>
+        <a href="scan.html" class="nav-item active">⚡ Scanner</a>
         <div id="connectionStatusBadge" class="connection-badge mock">
-          <span class="pulse-dot"></span> CHECKING...
+          <span class="pulse-dot"></span>
         </div>
       </div>
     </div>
   </nav>
 
-  <!-- Main Content Wrapper -->
-  <main class="main-wrapper">
+  <!-- Main Single-Screen Wrapper -->
+  <main class="main-wrapper" style="padding: 1rem 0.75rem 2rem 0.75rem;">
     
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">Live Gate Admission Scanner</h1>
-        <p class="page-subtitle">Scan attendee QR pass or enter Pass ID manually for instant verification.</p>
-      </div>
-      <div>
-        <a href="index.html" class="btn btn-secondary">← Back to Dashboard</a>
-      </div>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 2rem; align-items: start;">
+    <div class="mobile-scanner-wrapper">
       
-      <!-- Left Column: Camera Scanner & Manual Override -->
-      <div>
-        <!-- Camera Viewport Container -->
-        <div class="card" style="padding: 1.25rem;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
-            <div style="font-weight: 700; font-size: 1rem; color: var(--white);">📷 Camera Scanner</div>
-            <button class="btn btn-ghost" onclick="toggleCameraFlip()" style="font-size: 0.8rem; padding: 0.35rem 0.65rem;">
-              🔄 Flip Camera
-            </button>
-          </div>
-
-          <div class="scanner-viewport" id="scannerViewport">
-            <div id="reader"></div>
-            <div id="scanOverlay" class="scan-overlay">
-              <div class="spinner-ring"></div>
-              <div style="font-weight: 700; font-size: 1.1rem; color: var(--amber-500);">⚡ QR Code Captured</div>
-              <div id="overlayPassId" style="font-family: var(--font-mono); font-size: 0.95rem; color: var(--white); margin-top: 0.25rem;">Verifying pass...</div>
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-            <button id="btnStartScan" class="btn btn-emerald btn-block" onclick="startScanner()">
-              ▶️ Start Scanner Camera
-            </button>
-            <button id="btnStopScan" class="btn btn-secondary btn-block" onclick="stopScanner()" style="display: none;">
-              ⏹️ Stop Camera
-            </button>
-          </div>
+      <!-- Top Camera Viewport Block -->
+      <div class="scanner-viewport-compact" id="scannerViewport">
+        <div id="reader"></div>
+        <div id="scanOverlay" class="scan-overlay">
+          <div class="spinner-ring"></div>
+          <div style="font-weight: 700; font-size: 1.1rem; color: var(--amber-500);">⚡ QR Code Captured</div>
+          <div id="overlayPassId" style="font-family: var(--font-mono); font-size: 0.95rem; color: var(--white); margin-top: 0.25rem;">Verifying pass...</div>
         </div>
+        <button onclick="toggleCameraFlip()" class="btn btn-ghost" style="position: absolute; top: 8px; right: 8px; z-index: 5; background: rgba(0,0,0,0.6); padding: 0.35rem 0.65rem; font-size: 0.75rem; border-radius: var(--radius-sm);">
+          🔄 Flip
+        </button>
+      </div>
 
-        <!-- Manual Override Entry -->
-        <div class="card" style="margin-top: 1.5rem;">
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--white); margin-bottom: 0.75rem;">
-            ⌨️ Manual Pass ID Override
-          </h3>
-          <form onsubmit="handleManualScan(event)" style="display: flex; gap: 0.75rem;">
-            <input type="text" id="manualPassId" class="form-control mono" placeholder="e.g. #CW26-001" required>
-            <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
-              Verify Entry
-            </button>
-          </form>
+      <!-- Verification Status Bar (Directly below camera, replaces button bar) -->
+      <div id="statusBar" class="status-bar-container idle">
+        <button id="btnStartScan" class="btn btn-emerald btn-block" onclick="startScanner()" style="border: none;">
+          ▶️ Start Camera Scanner
+        </button>
+        <div id="statusContent" style="display: none; align-items: center; gap: 0.5rem;">
+          <span id="statusIcon">📱</span>
+          <span id="statusTitle">READY FOR SCAN</span>
         </div>
       </div>
 
-      <!-- Right Column: Verification Result & Recent Logs -->
-      <div>
+      <!-- Attendee Details Card (Directly below status bar) -->
+      <div class="attendee-details-compact">
+        <div id="detailsName" style="font-size: 1.35rem; font-weight: 800; color: var(--white); line-height: 1.2;">
+          READY FOR ENTRY
+        </div>
         
-        <!-- Scan Result Cards -->
-        <div id="resultValidating" class="scan-result-card validating">
-          <div class="spinner-ring" style="margin: 0 auto 0.75rem auto;"></div>
-          <div class="scan-result-title">VERIFYING WITH GATE SERVER</div>
-          <div id="valPassId" style="font-family: var(--font-mono); font-size: 1.1rem; color: var(--amber-500); font-weight: 700;">#CW26-001</div>
-          <div style="font-size: 0.85rem; color: var(--slate-300); margin-top: 0.5rem;">Checking database & gate lock...</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap;">
+          <span id="detailsRoll" style="font-family: var(--font-mono); color: var(--emerald-500); font-weight: 700; font-size: 0.95rem;">#CS-2026</span>
+          <span id="detailsPassId" style="font-family: var(--font-mono); color: var(--slate-300); font-size: 0.9rem;">#CW26-000</span>
         </div>
 
-        <div id="resultApproved" class="scan-result-card approved">
-          <div style="font-size: 3rem; margin-bottom: 0.5rem;">🟢</div>
-          <div class="scan-result-title">ENTRY APPROVED</div>
-          <div id="apprName" style="font-size: 1.4rem; font-weight: 800; color: var(--white);">ZAINAB AHMED</div>
-          <div id="apprRoll" style="font-family: var(--font-mono); color: var(--emerald-500); font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">#CS-2024-042</div>
-          <div id="apprPassId" style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--slate-300);">#CW26-001</div>
-          <div style="font-size: 0.8rem; color: var(--emerald-500); margin-top: 0.75rem; font-weight: 600;">Welcome to Creators Welcome 2026!</div>
+        <div id="detailsSubtext" style="font-size: 0.8rem; color: var(--slate-400); margin-top: 0.5rem;">
+          Point QR code at camera box above for instant gate admission.
         </div>
-
-        <div id="resultDuplicate" class="scan-result-card duplicate">
-          <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔴</div>
-          <div class="scan-result-title">ALREADY SCANNED / DUPLICATE</div>
-          <div id="dupeName" style="font-size: 1.3rem; font-weight: 800; color: var(--white);">ATTENDEE NAME</div>
-          <div id="dupeRoll" style="font-family: var(--font-mono); color: var(--rose-500); font-weight: 700; font-size: 1rem; margin-top: 0.25rem;">#ROLL-NUMBER</div>
-          <div id="dupePassId" style="font-family: var(--font-mono); font-size: 0.9rem; color: var(--slate-300); margin-top: 0.25rem;">#CW26-001</div>
-          <div id="dupeTime" style="font-size: 0.85rem; color: var(--rose-500); font-weight: 600; margin-top: 0.5rem;">Scanned previously at 06:15 PM</div>
-        </div>
-
-        <div id="resultInvalid" class="scan-result-card invalid">
-          <div style="font-size: 3rem; margin-bottom: 0.5rem;">⚠️</div>
-          <div class="scan-result-title">INVALID PASS ID</div>
-          <div id="invalidMsg" style="font-size: 0.95rem; color: var(--slate-200);">Unrecognized QR code or Pass ID not found in database.</div>
-        </div>
-
-        <!-- Default Standby State -->
-        <div id="resultStandby" class="card" style="text-align: center; padding: 3rem 1.5rem;">
-          <div style="font-size: 3rem; margin-bottom: 0.75rem; opacity: 0.7;">📱</div>
-          <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--white);">Ready for Scanning</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 300px; margin: 0.5rem auto 0 auto;">
-            Point attendee pass QR code at camera or enter ID manually to verify gate entrance.
-          </p>
-        </div>
-
-        <!-- Recent Gate Activity Log -->
-        <div class="card" style="margin-top: 1.5rem;">
-          <h3 style="font-size: 1rem; font-weight: 700; color: var(--white); margin-bottom: 0.85rem;">
-            📋 Recent Gate Activity
-          </h3>
-          <div id="recentScanLog" style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 250px; overflow-y: auto;">
-            <div style="font-size: 0.85rem; color: var(--slate-400); text-align: center; padding: 1rem;">
-              No scans registered in current session.
-            </div>
-          </div>
-        </div>
-
       </div>
+
+      <!-- Compact Manual Override Entry -->
+      <div class="card" style="width: 100%; max-width: 380px; padding: 0.85rem 1rem;">
+        <form onsubmit="handleManualScan(event)" style="display: flex; gap: 0.5rem;">
+          <input type="text" id="manualPassId" class="form-control mono" placeholder="Enter Pass ID e.g. #CW26-001" style="padding: 0.5rem 0.75rem; font-size: 0.85rem;" required>
+          <button type="submit" class="btn btn-primary" style="white-space: nowrap; padding: 0.5rem 0.85rem; font-size: 0.85rem;">
+            Verify
+          </button>
+        </form>
+      </div>
+
+      <!-- Stop Camera Button (when camera active) -->
+      <button id="btnStopScan" class="btn btn-secondary btn-block" onclick="stopScanner()" style="display: none; max-width: 380px; font-size: 0.85rem; padding: 0.5rem;">
+        ⏹️ Pause Camera Scanner
+      </button>
 
     </div>
 
@@ -159,16 +102,54 @@
   <script>
     let html5QrCode = null;
     let isScanning = false;
-    let currentFacingMode = "environment"; // Back camera
+    let currentFacingMode = "environment";
     let scanCooldown = false;
-    const scanHistory = [];
 
-    function hideAllResultCards() {
-      document.getElementById('resultValidating').style.display = 'none';
-      document.getElementById('resultApproved').style.display = 'none';
-      document.getElementById('resultDuplicate').style.display = 'none';
-      document.getElementById('resultInvalid').style.display = 'none';
-      document.getElementById('resultStandby').style.display = 'none';
+    function setScannerState(state, title, name, roll, passId, subtext, icon) {
+      const statusBar = document.getElementById('statusBar');
+      const btnStart = document.getElementById('btnStartScan');
+      const statusContent = document.getElementById('statusContent');
+      const statusTitle = document.getElementById('statusTitle');
+      const statusIcon = document.getElementById('statusIcon');
+
+      const detailsName = document.getElementById('detailsName');
+      const detailsRoll = document.getElementById('detailsRoll');
+      const detailsPassId = document.getElementById('detailsPassId');
+      const detailsSubtext = document.getElementById('detailsSubtext');
+
+      // Update status bar styling
+      statusBar.className = `status-bar-container ${state}`;
+
+      if (state === 'idle' && !isScanning) {
+        btnStart.style.display = 'block';
+        statusContent.style.display = 'none';
+      } else {
+        btnStart.style.display = 'none';
+        statusContent.style.display = 'flex';
+        statusTitle.innerText = title;
+        statusIcon.innerText = icon || '📱';
+      }
+
+      // Update details card
+      detailsName.innerText = (name || 'READY FOR ENTRY').toUpperCase();
+      detailsRoll.innerText = roll || '#ROLL';
+      detailsPassId.innerText = passId || '#CW26-000';
+      detailsSubtext.innerText = subtext || '';
+
+      // Text colors based on status
+      if (state === 'approved') {
+        detailsName.style.color = '#ffffff';
+        detailsRoll.style.color = 'var(--emerald-500)';
+      } else if (state === 'duplicate') {
+        detailsName.style.color = '#ffffff';
+        detailsRoll.style.color = 'var(--rose-500)';
+      } else if (state === 'invalid') {
+        detailsName.style.color = 'var(--amber-500)';
+        detailsRoll.style.color = 'var(--slate-400)';
+      } else {
+        detailsName.style.color = 'var(--white)';
+        detailsRoll.style.color = 'var(--emerald-500)';
+      }
     }
 
     async function processPassVerification(passIdStr) {
@@ -177,7 +158,7 @@
 
       const cleanId = passIdStr.trim().toUpperCase();
 
-      // 1. Instant Audio Beep + Camera Viewport Buffer Overlay
+      // Audio Beep
       if (typeof AppUtils.playScanBeep === 'function') {
         AppUtils.playScanBeep();
       }
@@ -195,48 +176,60 @@
         overlay.classList.add('active');
       }
 
-      // 2. Show Validating Loading Card
-      hideAllResultCards();
-      document.getElementById('valPassId').innerText = cleanId;
-      document.getElementById('resultValidating').style.display = 'block';
+      // Update status bar to VALIDATING state
+      setScannerState(
+        'validating',
+        `VERIFYING ${cleanId}...`,
+        'CHECKING DATABASE...',
+        cleanId,
+        '#CW26-VERIFYING',
+        'Validating pass with gate lock server...',
+        '⏳'
+      );
 
       try {
         const res = await CW26Api.callApi('checkAndScanPass', { passId: cleanId });
 
-        // Hide Buffer Overlay & Validating Card
         if (viewport) viewport.classList.remove('validating');
         if (overlay) overlay.classList.remove('active');
-        hideAllResultCards();
 
         if (res && res.success && res.state === 'APPROVED') {
           const pass = res.pass;
-          document.getElementById('apprName').innerText = (pass.name || 'ATTENDEE').toUpperCase();
-          document.getElementById('apprRoll').innerText = pass.rollNo || '#ROLL';
-          document.getElementById('apprPassId').innerText = pass.passId || cleanId;
-          document.getElementById('resultApproved').style.display = 'block';
-
+          setScannerState(
+            'approved',
+            '🟢 ENTRY APPROVED',
+            pass.name || 'ATTENDEE',
+            pass.rollNo || '#ROLL',
+            pass.passId || cleanId,
+            'Entry Registered! Welcome to Creators Welcome 2026.',
+            '🟢'
+          );
           AppUtils.playSuccessTone();
-          addScanToLog('APPROVED', pass.passId, pass.name);
 
         } else if (res && res.state === 'DUPLICATE') {
           const pass = res.pass || {};
-          document.getElementById('dupeName').innerText = (pass.name || 'ATTENDEE').toUpperCase();
-          if (document.getElementById('dupeRoll')) {
-            document.getElementById('dupeRoll').innerText = pass.rollNo || '';
-          }
-          document.getElementById('dupeTime').innerText = res.message || 'Already scanned previously';
-          document.getElementById('dupePassId').innerText = pass.passId || cleanId;
-          document.getElementById('resultDuplicate').style.display = 'block';
-
+          setScannerState(
+            'duplicate',
+            '🔴 ALREADY SCANNED / DUPLICATE',
+            pass.name || 'ATTENDEE',
+            pass.rollNo || '#ROLL',
+            pass.passId || cleanId,
+            res.message || 'Scanned previously at gate.',
+            '🔴'
+          );
           AppUtils.playWarningTone();
-          addScanToLog('DUPLICATE', pass.passId || cleanId, pass.name || 'Duplicate Entry');
 
         } else {
-          document.getElementById('invalidMsg').innerText = res.message || `Pass ID ${cleanId} not found in database.`;
-          document.getElementById('resultInvalid').style.display = 'block';
-
+          setScannerState(
+            'invalid',
+            '⚠️ INVALID PASS ID',
+            'UNRECOGNIZED PASS',
+            cleanId,
+            cleanId,
+            res.message || 'Pass ID not found in database.',
+            '⚠️'
+          );
           AppUtils.playWarningTone();
-          addScanToLog('INVALID', cleanId, 'Unrecognized Pass');
         }
 
       } catch (err) {
@@ -249,6 +242,7 @@
         setTimeout(() => {
           if (html5QrCode && isScanning) {
             try { html5QrCode.resume(); } catch(e){}
+            setScannerState('idle', 'CAMERA ACTIVE — READY', 'READY FOR NEXT SCAN', '#CS-2026', '#CW26-000', 'Point next attendee QR pass at camera box.', '📷');
           }
           scanCooldown = false;
         }, 2500);
@@ -263,37 +257,12 @@
       document.getElementById('manualPassId').value = '';
     }
 
-    function addScanToLog(status, passId, name) {
-      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      scanHistory.unshift({ status, passId, name, timeStr });
-
-      const logContainer = document.getElementById('recentScanLog');
-      logContainer.innerHTML = scanHistory.map(item => {
-        let badgeClass = 'unused';
-        let badgeText = 'APPROVED';
-        if (item.status === 'APPROVED') { badgeClass = 'used'; badgeText = 'APPROVED'; }
-        if (item.status === 'DUPLICATE') { badgeClass = 'status-badge'; badgeText = 'DUPLICATE'; }
-        if (item.status === 'INVALID') { badgeText = 'INVALID'; }
-
-        return `
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); font-size: 0.8rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="status-badge ${item.status === 'APPROVED' ? 'used' : (item.status === 'DUPLICATE' ? 'status-badge' : 'unused')}">${item.status}</span>
-              <span style="font-family: var(--font-mono); font-weight: 700; color: var(--emerald-500);">${item.passId}</span>
-              <span style="color: var(--white); font-weight: 600;">${escapeHtml(item.name)}</span>
-            </div>
-            <span style="color: var(--slate-400); font-size: 0.75rem;">${item.timeStr}</span>
-          </div>
-        `;
-      }).join('');
-    }
-
     function startScanner() {
       if (!html5QrCode) {
         html5QrCode = new Html5Qrcode("reader");
       }
 
-      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+      const config = { fps: 10, qrbox: { width: 200, height: 200 } };
 
       html5QrCode.start(
         { facingMode: currentFacingMode },
@@ -301,14 +270,12 @@
         (decodedText) => {
           processPassVerification(decodedText);
         },
-        (errorMessage) => {
-          // ignore frame parse errors
-        }
+        (errorMessage) => {}
       ).then(() => {
         isScanning = true;
-        document.getElementById('btnStartScan').style.display = 'none';
         document.getElementById('btnStopScan').style.display = 'block';
-        AppUtils.showToast('Camera scanner started', 'success');
+        setScannerState('idle', 'CAMERA ACTIVE — READY', 'READY FOR NEXT SCAN', '#CS-2026', '#CW26-000', 'Point attendee QR pass at camera box.', '📷');
+        AppUtils.showToast('Camera scanner active', 'success');
       }).catch(err => {
         console.error("Camera start error", err);
         AppUtils.showToast('Could not access camera. Try manual override below.', 'error');
@@ -319,8 +286,8 @@
       if (html5QrCode && isScanning) {
         html5QrCode.stop().then(() => {
           isScanning = false;
-          document.getElementById('btnStartScan').style.display = 'block';
           document.getElementById('btnStopScan').style.display = 'none';
+          setScannerState('idle', 'CAMERA PAUSED', 'READY FOR SCAN', '#CS-2026', '#CW26-000', 'Click Start Camera to begin scanning.', '📱');
           AppUtils.showToast('Camera scanner paused', 'info');
         }).catch(err => console.error(err));
       }
@@ -332,10 +299,6 @@
         stopScanner();
         setTimeout(startScanner, 400);
       }
-    }
-
-    function escapeHtml(str) {
-      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
   </script>
 </body>
