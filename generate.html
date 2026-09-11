@@ -192,7 +192,7 @@
           AppUtils.playSuccessTone();
           AppUtils.showToast(`Pass ${res.pass.passId} issued successfully!`, 'success');
         } else {
-          AppUtils.showToast(res.message || 'Failed to generate pass', 'error');
+          AppUtils.showToast(res ? (res.message || res.error || 'Failed to generate pass') : 'Failed to generate pass', 'error');
         }
       } catch (err) {
         console.error(err);

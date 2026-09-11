@@ -393,3 +393,14 @@ function prettifySheet() {
     return { success: false, error: e.toString() };
   }
 }
+
+/**
+ * Helper function: Left-pad number with zeros
+ */
+function padNumber(num, length) {
+  var str = (num || 0).toString();
+  while (str.length < length) {
+    str = '0' + str;
+  }
+  return str;
+}
