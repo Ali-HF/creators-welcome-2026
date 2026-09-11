@@ -134,20 +134,17 @@ window.AppUtils = (function () {
     canvas.height = 1000;
     const ctx = canvas.getContext('2d');
 
-    // Background Gradient
-    const grad = ctx.createLinearGradient(0, 0, 800, 1000);
-    grad.addColorStop(0, '#1e1b4b');
-    grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad;
+    // Background Solid Minimal Dark Slate
+    ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, 800, 1000);
 
-    // Border
-    ctx.strokeStyle = '#7c3aed';
-    ctx.lineWidth = 8;
+    // Border Emerald
+    ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 6;
     ctx.strokeRect(4, 4, 792, 992);
 
     // Header Banner
-    ctx.fillStyle = '#6d28d9';
+    ctx.fillStyle = '#064e3b';
     ctx.fillRect(0, 0, 800, 160);
 
     ctx.fillStyle = '#ffffff';
@@ -155,8 +152,8 @@ window.AppUtils = (function () {
     ctx.textAlign = 'center';
     ctx.fillText('CREATORS WELCOME 2026', 400, 70);
 
-    ctx.fillStyle = '#f3e8ff';
-    ctx.font = '600 20px Inter, sans-serif';
+    ctx.fillStyle = '#34d399';
+    ctx.font = '600 18px Inter, sans-serif';
     ctx.fillText('OFFICIAL LIVE ADMISSION PASS', 400, 115);
 
     // Pass details
