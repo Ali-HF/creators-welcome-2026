@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creators Welcome 2026 — Operations Dashboard</title>
+  <meta name="description" content="Event Pass Operations & Live Gate Admission Web Application for Creators Welcome 2026">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="index.html" class="brand-logo">
+        <div class="brand-icon">CW</div>
+        <div>
+          <div class="brand-title">CREATORS WELCOME</div>
+        </div>
+        <span class="brand-badge">2026 OPS</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="index.html" class="nav-item active">📊 Dashboard</a>
+        <a href="generate.html" class="nav-item">🎟️ Issue Pass</a>
+        <a href="scan.html" class="nav-item">⚡ Gate Scanner</a>
+        <div id="connectionStatusBadge" class="connection-badge mock" title="Click to configure API">
+          <span class="pulse-dot"></span> CHECKING...
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+    
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Event Operations Dashboard</h1>
+        <p class="page-subtitle">Real-time gate admission metrics, revenue analytics, and attendee registry.</p>
+      </div>
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn btn-secondary" onclick="loadDashboardData()">🔄 Refresh Data</button>
+        <a href="generate.html" class="btn btn-primary">➕ Issue New Pass</a>
+        <a href="scan.html" class="btn btn-emerald">📱 Open Gate Scanner</a>
+      </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Total Passes Issued</span>
+          <div class="metric-icon">🎫</div>
+        </div>
+        <div class="metric-value" id="valTotalIssued">0</div>
+        <div class="metric-sub">Issued via Generator / API</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Checked-In at Gate</span>
+          <div class="metric-icon">🟢</div>
+        </div>
+        <div class="metric-value" id="valScannedCount" style="color: var(--emerald-500);">0</div>
+        <div class="metric-sub">Validated attendee entry</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Remaining Unused</span>
+          <div class="metric-icon">⏳</div>
+        </div>
+        <div class="metric-value" id="valUnusedCount" style="color: var(--amber-500);">0</div>
+        <div class="metric-sub">Pending arrival at venue</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Total Revenue (PKR)</span>
+          <div class="metric-icon">💰</div>
+        </div>
+        <div class="metric-value" id="valTotalRevenue">PKR 0</div>
+        <div class="metric-sub">Aggregated payments</div>
+      </div>
+
+      <div class="metric-card">
+        <div class="metric-header">
+          <span class="metric-label">Gate Admission Rate</span>
+          <div class="metric-icon">📈</div>
+        </div>
+        <div class="metric-value" id="valAdmissionPct">0%</div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="valAdmissionFill" style="width: 0%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendee Directory Table -->
+    <div class="card">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--white);">Live Attendee Directory</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Real-time status tracking across all gates</p>
+        </div>
+        
+        <div style="display: flex; gap: 0.75rem; width: 100%; max-width: 380px;">
+          <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search Name, Pass ID, Roll No..." onkeyup="filterDirectory()">
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="table" id="directoryTable">
+          <thead>
+            <tr>
+              <th>Pass ID</th>
+              <th>Attendee Name</th>
+              <th>Roll Number</th>
+              <th>Amount Paid</th>
+              <th>Status</th>
+              <th>Created Date</th>
+              <th>Gate Scan Time</th>
+            </tr>
+          </thead>
+          <tbody id="directoryTbody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--slate-400); padding: 2rem;">
+                Loading attendee database...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Settings Modal for Google Apps Script API URL -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ Backend API Configuration</h3>
+        <button class="btn btn-ghost" data-close-modal style="padding: 0.25rem 0.5rem;">✕</button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Paste your Google Apps Script Web App Deployment URL below to connect to live Google Sheets backend.
+      </p>
+
+      <div class="form-group">
+        <label class="form-label">Google Apps Script Web App URL</label>
+        <input type="text" id="inputScriptUrl" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem;">
+        <button class="btn btn-secondary" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save & Connect</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/api.js"></script>
+  <script>
+    let allPassesCache = [];
+
+    async function loadDashboardData() {
+      try {
+        AppUtils.showToast('Fetching latest metrics...', 'info');
+
+        const [statsRes, passesRes] = await Promise.all([
+          CW26Api.callApi('getStats'),
+          CW26Api.callApi('getPasses')
+        ]);
+
+        if (statsRes && statsRes.success && statsRes.stats) {
+          const s = statsRes.stats;
+          document.getElementById('valTotalIssued').innerText = s.totalIssued;
+          document.getElementById('valScannedCount').innerText = s.scannedCount;
+          document.getElementById('valUnusedCount').innerText = s.unusedCount;
+          document.getElementById('valTotalRevenue').innerText = `PKR ${(s.totalRevenue || 0).toLocaleString()}`;
+          document.getElementById('valAdmissionPct').innerText = `${s.admissionPct}%`;
+          document.getElementById('valAdmissionFill').style.width = `${s.admissionPct}%`;
+        }
+
+        if (passesRes && passesRes.success && passesRes.passes) {
+          allPassesCache = passesRes.passes;
+          renderDirectoryTable(allPassesCache);
+        }
+      } catch (err) {
+        console.error(err);
+        AppUtils.showToast('Failed to load metrics', 'error');
+      }
+    }
+
+    function renderDirectoryTable(passes) {
+      const tbody = document.getElementById('directoryTbody');
+      if (!passes || passes.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--slate-400); padding: 2rem;">No passes issued yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = passes.map(p => {
+        const isUsed = p.status === 'used';
+        const statusClass = isUsed ? 'used' : 'unused';
+        const statusText = isUsed ? '🟢 CHECKED-IN' : '⏳ UNUSED';
+        const createdDate = p.createdIso ? new Date(p.createdIso).toLocaleDateString() : 'N/A';
+        const scannedTime = p.scannedIso ? new Date(p.scannedIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+
+        return `
+          <tr>
+            <td style="font-family: var(--font-mono); font-weight: 700; color: var(--emerald-500);">${p.passId}</td>
+            <td style="font-weight: 600; color: var(--white);">${escapeHtml(p.name)}</td>
+            <td style="font-family: var(--font-mono); color: var(--slate-300);">${escapeHtml(p.rollNo)}</td>
+            <td style="font-weight: 600;">PKR ${(p.amount || 2500).toLocaleString()}</td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td style="color: var(--slate-400); font-size: 0.8rem;">${createdDate}</td>
+            <td style="color: var(--slate-400); font-size: 0.8rem;">${scannedTime}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterDirectory() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!query) {
+        renderDirectoryTable(allPassesCache);
+        return;
+      }
+      const filtered = allPassesCache.filter(p => 
+        p.passId.toLowerCase().includes(query) ||
+        p.name.toLowerCase().includes(query) ||
+        p.rollNo.toLowerCase().includes(query)
+      );
+      renderDirectoryTable(filtered);
+    }
+
+    function saveSettings() {
+      const url = document.getElementById('inputScriptUrl').value.trim();
+      localStorage.setItem('cw26_script_url', url);
+      AppUtils.updateConnectionBadge();
+      document.getElementById('settingsModal').classList.remove('open');
+      AppUtils.showToast('Backend API URL saved!', 'success');
+      loadDashboardData();
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('inputScriptUrl').value = localStorage.getItem('cw26_script_url') || '';
+      loadDashboardData();
+    });
+  </script>
+</body>
+</html>
