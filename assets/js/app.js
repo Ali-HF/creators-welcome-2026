@@ -218,22 +218,21 @@ window.AppUtils = (function () {
     }
   }
 
-  // Update navbar live connection status badge UI
   function updateConnectionBadge() {
     const badge = document.getElementById('connectionStatusBadge');
     if (!badge) return;
 
-    const scriptUrl = localStorage.getItem('cw26_script_url');
-    const isFile = window.location.protocol === 'file:';
+    const scriptUrl = typeof CW26Api !== 'undefined' ? CW26Api.getScriptUrl() : (localStorage.getItem('cw26_script_url') || '');
+    const isMock = typeof CW26Api !== 'undefined' ? CW26Api.isMockMode() : (!scriptUrl || scriptUrl.length < 10);
 
-    if (scriptUrl && scriptUrl.trim().length > 10) {
+    if (!isMock && scriptUrl && scriptUrl.trim().length > 10) {
       badge.className = 'connection-badge live';
       badge.innerHTML = `<span class="pulse-dot"></span> LIVE GOOGLE SHEET`;
       badge.title = 'Connected to Live Google Apps Script API';
     } else {
       badge.className = 'connection-badge mock';
       badge.innerHTML = `<span class="pulse-dot"></span> DEMO / MOCK MODE`;
-      badge.title = isFile ? 'Local file mode — using local mock database' : 'Click to configure Google Apps Script API URL';
+      badge.title = 'Click to configure Google Apps Script API URL';
     }
   }
 
