@@ -188,7 +188,7 @@ function checkAndScanPass(data) {
 
     var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
 
-    for (var i = 0; i < values.length; i++) {
+    for (var i = values.length - 1; i >= 0; i--) {
       var rowPassId = (values[i][0] || '').toString().trim().toUpperCase();
       if (rowPassId === targetId) {
         var currentStatus = (values[i][4] || '').toString().toLowerCase();
