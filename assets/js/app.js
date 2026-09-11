@@ -67,8 +67,23 @@ window.AppUtils = (function () {
 
       osc.start(now);
       osc.stop(now + 0.4);
+  function playScanBeep() {
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1046.50, now); // C6 high beep
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
     } catch (e) {
-      console.log('Audio playback prevented or unsupported', e);
+      console.log('Audio playback error', e);
     }
   }
 
@@ -312,6 +327,7 @@ window.AppUtils = (function () {
 
   return {
     getAudioContext,
+    playScanBeep,
     playSuccessTone,
     playWarningTone,
     showToast,

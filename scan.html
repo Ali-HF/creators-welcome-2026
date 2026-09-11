@@ -59,8 +59,13 @@
             </button>
           </div>
 
-          <div class="scanner-viewport">
+          <div class="scanner-viewport" id="scannerViewport">
             <div id="reader"></div>
+            <div id="scanOverlay" class="scan-overlay">
+              <div class="spinner-ring"></div>
+              <div style="font-weight: 700; font-size: 1.1rem; color: var(--amber-500);">⚡ QR Code Captured</div>
+              <div id="overlayPassId" style="font-family: var(--font-mono); font-size: 0.95rem; color: var(--white); margin-top: 0.25rem;">Verifying pass...</div>
+            </div>
           </div>
 
           <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
@@ -91,6 +96,13 @@
       <div>
         
         <!-- Scan Result Cards -->
+        <div id="resultValidating" class="scan-result-card validating">
+          <div class="spinner-ring" style="margin: 0 auto 0.75rem auto;"></div>
+          <div class="scan-result-title">VERIFYING WITH GATE SERVER</div>
+          <div id="valPassId" style="font-family: var(--font-mono); font-size: 1.1rem; color: var(--amber-500); font-weight: 700;">#CW26-001</div>
+          <div style="font-size: 0.85rem; color: var(--slate-300); margin-top: 0.5rem;">Checking database & gate lock...</div>
+        </div>
+
         <div id="resultApproved" class="scan-result-card approved">
           <div style="font-size: 3rem; margin-bottom: 0.5rem;">🟢</div>
           <div class="scan-result-title">ENTRY APPROVED</div>
@@ -152,6 +164,7 @@
     const scanHistory = [];
 
     function hideAllResultCards() {
+      document.getElementById('resultValidating').style.display = 'none';
       document.getElementById('resultApproved').style.display = 'none';
       document.getElementById('resultDuplicate').style.display = 'none';
       document.getElementById('resultInvalid').style.display = 'none';
@@ -163,11 +176,36 @@
       scanCooldown = true;
 
       const cleanId = passIdStr.trim().toUpperCase();
-      AppUtils.showToast(`Verifying ${cleanId}...`, 'info');
+
+      // 1. Instant Audio Beep + Camera Viewport Buffer Overlay
+      if (typeof AppUtils.playScanBeep === 'function') {
+        AppUtils.playScanBeep();
+      }
+
+      // Pause camera detection during verification
+      if (html5QrCode && isScanning) {
+        try { html5QrCode.pause(true); } catch(e){}
+      }
+
+      const viewport = document.getElementById('scannerViewport');
+      const overlay = document.getElementById('scanOverlay');
+      if (viewport) viewport.classList.add('validating');
+      if (overlay) {
+        document.getElementById('overlayPassId').innerText = `Verifying ${cleanId}...`;
+        overlay.classList.add('active');
+      }
+
+      // 2. Show Validating Loading Card
+      hideAllResultCards();
+      document.getElementById('valPassId').innerText = cleanId;
+      document.getElementById('resultValidating').style.display = 'block';
 
       try {
         const res = await CW26Api.callApi('checkAndScanPass', { passId: cleanId });
 
+        // Hide Buffer Overlay & Validating Card
+        if (viewport) viewport.classList.remove('validating');
+        if (overlay) overlay.classList.remove('active');
         hideAllResultCards();
 
         if (res && res.success && res.state === 'APPROVED') {
@@ -203,9 +241,17 @@
 
       } catch (err) {
         console.error(err);
+        if (viewport) viewport.classList.remove('validating');
+        if (overlay) overlay.classList.remove('active');
         AppUtils.showToast('Scanner verification error', 'error');
       } finally {
-        setTimeout(() => { scanCooldown = false; }, 2000); // 2-second cooldown to prevent double-read
+        // Auto-resume camera scanning after 2.5 seconds buffer
+        setTimeout(() => {
+          if (html5QrCode && isScanning) {
+            try { html5QrCode.resume(); } catch(e){}
+          }
+          scanCooldown = false;
+        }, 2500);
       }
     }
 
