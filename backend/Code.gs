@@ -73,22 +73,20 @@ function getOrCreateSheet() {
     throw new Error('Spreadsheet not found. Please ensure the Apps Script was opened via Extensions -> Apps Script inside your Google Sheet.');
   }
 
-  var sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    var active = ss.getActiveSheet();
-    if (active && (active.getName() === 'Sheet1' || active.getName() === 'Sheet 1' || active.getLastRow() === 0)) {
-      sheet = active;
+  // Always use the first sheet tab (what the user sees when opening Google Sheets)
+  var sheet = ss.getSheets()[0];
+  if (sheet.getName() !== SHEET_NAME && sheet.getName().indexOf('Sheet') === 0) {
+    try {
       sheet.setName(SHEET_NAME);
-    } else {
-      sheet = ss.insertSheet(SHEET_NAME);
-    }
-
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow([
-        'Pass ID', 'Full Name', 'Roll Number', 'Amount Paid (PKR)', 'Status', 'Created ISO', 'Scanned ISO', 'Email', 'WhatsApp'
-      ]);
-    }
+    } catch (e) {}
   }
+
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow([
+      'Pass ID', 'Full Name', 'Roll Number', 'Amount Paid (PKR)', 'Status', 'Created ISO', 'Scanned ISO', 'Email', 'WhatsApp'
+    ]);
+  }
+
   return sheet;
 }
 
