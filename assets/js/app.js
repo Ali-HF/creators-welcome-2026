@@ -288,7 +288,7 @@ window.AppUtils = (function () {
 
     const input = document.getElementById('inputScriptUrl');
     if (input) {
-      input.value = localStorage.getItem('cw26_script_url') || '';
+      input.value = typeof CW26Api !== 'undefined' ? CW26Api.getScriptUrl() : '';
     }
 
     const badge = document.getElementById('connectionStatusBadge');
@@ -296,7 +296,7 @@ window.AppUtils = (function () {
       badge.addEventListener('click', () => {
         ensureSettingsModal();
         const input = document.getElementById('inputScriptUrl');
-        if (input) input.value = localStorage.getItem('cw26_script_url') || '';
+        if (input) input.value = typeof CW26Api !== 'undefined' ? CW26Api.getScriptUrl() : '';
         const modal = document.getElementById('settingsModal');
         if (modal) modal.classList.add('open');
       });

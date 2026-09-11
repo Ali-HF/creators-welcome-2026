@@ -55,8 +55,10 @@ window.CW26Api = (function () {
     localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(data));
   }
 
+  const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw2NUJtxC3bwhLne35wNoHzNyOBtMMWCXNXtKCfr-SGqgjq5nn1B70A9fdXulSlohbC/exec';
+
   function getScriptUrl() {
-    return (localStorage.getItem('cw26_script_url') || '').trim();
+    return (localStorage.getItem('cw26_script_url') || DEFAULT_SCRIPT_URL).trim();
   }
 
   function isMockMode() {
