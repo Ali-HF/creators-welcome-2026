@@ -489,6 +489,7 @@ function batchGeneratePasses(data) {
   try {
     lock.waitLock(15000); // 15s wait for bulk lock
 
+    var lastRow = sheet.getLastRow();
     var existingSet = getExistingPassIdsSet(sheet);
 
     for (var i = 0; i < rawItems.length; i++) {
@@ -526,7 +527,7 @@ function batchGeneratePasses(data) {
     }
 
     if (rowsToAppend.length > 0) {
-      var startRowIndex = lastRow + 1;
+      var startRowIndex = Math.max(lastRow, 1) + 1;
       sheet.getRange(startRowIndex, 1, rowsToAppend.length, 9).setValues(rowsToAppend);
     }
 
