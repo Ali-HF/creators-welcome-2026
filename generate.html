@@ -481,15 +481,39 @@ Amount Paid: 2500`;
       btn.disabled = true;
       btn.innerText = `⌛ Generating ${items.length} Passes...`;
       progressBox.style.display = 'block';
-      progressFill.style.width = '30%';
+      progressFill.style.width = '10%';
       progressTitle.innerText = `Issuing ${items.length} passes & dispatching emails...`;
-      progressPct.innerText = '30%';
+      progressPct.innerText = '10%';
 
       try {
-        const res = await CW26Api.callApi('batchGeneratePasses', { items: items });
+        let res = await CW26Api.callApi('batchGeneratePasses', { items: items });
 
-        progressFill.style.width = '100%';
-        progressPct.innerText = '100%';
+        // Fallback for older Apps Script deployments that don't have batchGeneratePasses action yet
+        if (!res || (!res.success && res.message && (res.message.includes('Invalid action') || res.message.includes('invalid')))) {
+          AppUtils.showToast('Connecting via item-by-item generator...', 'info');
+          const passes = [];
+          for (let i = 0; i < items.length; i++) {
+            const pct = Math.round(((i + 1) / items.length) * 100);
+            progressFill.style.width = `${pct}%`;
+            progressPct.innerText = `${pct}%`;
+            progressTitle.innerText = `Issuing pass ${i + 1} of ${items.length} (${items[i].name})...`;
+
+            const itemRes = await CW26Api.callApi('generatePass', items[i]);
+            if (itemRes && itemRes.success && itemRes.pass) {
+              passes.push(itemRes.pass);
+            }
+          }
+          res = {
+            success: true,
+            count: passes.length,
+            startPassId: passes[0] ? passes[0].passId : '#CW26-001',
+            endPassId: passes[passes.length - 1] ? passes[passes.length - 1].passId : '#CW26-001',
+            passes: passes
+          };
+        } else {
+          progressFill.style.width = '100%';
+          progressPct.innerText = '100%';
+        }
 
         if (res && res.success && res.passes) {
           lastBatchGeneratedPasses = res.passes;

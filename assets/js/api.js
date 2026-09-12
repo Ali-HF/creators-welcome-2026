@@ -165,6 +165,39 @@ window.CW26Api = (function () {
       };
     }
 
+    if (action === 'batchGeneratePasses') {
+      const items = payload.items || [];
+      const generatedPasses = [];
+      let startNum = passes.length + 1;
+
+      items.forEach((item, idx) => {
+        const passId = `#CW26-${String(startNum + idx).padStart(3, '0')}`;
+        const newPass = {
+          passId,
+          name: item.name || 'Attendee',
+          rollNo: (item.rollNo || '').toUpperCase(),
+          amount: Number(item.amount) || DEFAULT_PRICE,
+          status: 'unused',
+          createdIso: new Date().toISOString(),
+          scannedIso: '',
+          email: item.email || '',
+          whatsapp: item.whatsapp || ''
+        };
+        passes.push(newPass);
+        generatedPasses.push(newPass);
+      });
+
+      saveMockStore(passes);
+
+      return {
+        success: true,
+        count: generatedPasses.length,
+        startPassId: generatedPasses[0] ? generatedPasses[0].passId : '#CW26-001',
+        endPassId: generatedPasses[generatedPasses.length - 1] ? generatedPasses[generatedPasses.length - 1].passId : '#CW26-001',
+        passes: generatedPasses
+      };
+    }
+
     if (action === 'checkAndScanPass') {
       const rawId = (payload.passId || '').trim().toUpperCase();
       const targetId = rawId.startsWith('#') ? rawId : `#${rawId}`;
