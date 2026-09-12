@@ -115,9 +115,8 @@ function generatePass(data) {
   try {
     lock.waitLock(10000); // 10s wait
 
-    var lastRow = sheet.getLastRow();
-    var count = lastRow > 1 ? (lastRow - 1) + 1 : 1;
-    passId = '#CW26-' + padNumber(count, 3);
+    var existingSet = getExistingPassIdsSet(sheet);
+    passId = generateUniqueRandomPassId(existingSet);
 
     sheet.appendRow([
       passId,
@@ -490,13 +489,11 @@ function batchGeneratePasses(data) {
   try {
     lock.waitLock(15000); // 15s wait for bulk lock
 
-    var lastRow = sheet.getLastRow();
-    var startCount = lastRow > 1 ? (lastRow - 1) + 1 : 1;
+    var existingSet = getExistingPassIdsSet(sheet);
 
     for (var i = 0; i < rawItems.length; i++) {
       var item = rawItems[i] || {};
-      var count = startCount + i;
-      var passId = '#CW26-' + padNumber(count, 3);
+      var passId = generateUniqueRandomPassId(existingSet);
       var name = (item.name || 'Attendee').toString().trim();
       var rollNo = (item.rollNo || '').toString().trim().toUpperCase();
       var amount = Number(item.amount) || DEFAULT_PRICE;
@@ -588,7 +585,7 @@ function batchProcessSheetRows() {
     return;
   }
 
-  var values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  var existingSet = getExistingPassIdsSet(sheet);
   var processedCount = 0;
   var emailsCount = 0;
   var nowIso = new Date().toISOString();
@@ -602,7 +599,7 @@ function batchProcessSheetRows() {
 
     // If row has Name/Roll but missing Pass ID, process it!
     if (!rowPassId && (name || rollNo)) {
-      var passId = '#CW26-' + padNumber(rowIndex - 1, 3);
+      var passId = generateUniqueRandomPassId(existingSet);
       var status = values[i][4] || 'unused';
       var amount = values[i][3] || DEFAULT_PRICE;
 
@@ -621,6 +618,44 @@ function batchProcessSheetRows() {
   }
 
   ui.alert('✅ Batch Processing Complete!\n\nPass IDs Assigned: ' + processedCount + '\nEmails Dispatched: ' + emailsCount);
+}
+
+/**
+ * Generates a randomized, non-colliding 4-digit Pass ID (e.g. #CW26-8492)
+ * Ensures no two generated passes ever share the same ID.
+ */
+function generateUniqueRandomPassId(existingSet) {
+  var id;
+  var attempts = 0;
+  do {
+    var randomNum = Math.floor(1000 + Math.random() * 9000);
+    id = '#CW26-' + randomNum;
+    attempts++;
+    
+    // Safety expansion if 4-digit space gets filled (over 9,000 passes)
+    if (attempts > 10000) {
+      id = '#CW26-' + Math.floor(10000 + Math.random() * 90000);
+    }
+  } while (existingSet[id]);
+
+  existingSet[id] = true;
+  return id;
+}
+
+/**
+ * Reads all existing Pass IDs from Column A into an Object Set to prevent collisions
+ */
+function getExistingPassIdsSet(sheet) {
+  var existingSet = {};
+  var lastRow = sheet.getLastRow();
+  if (lastRow > 1) {
+    var values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+    for (var i = 0; i < values.length; i++) {
+      var id = (values[i][0] || '').toString().trim().toUpperCase();
+      if (id) existingSet[id] = true;
+    }
+  }
+  return existingSet;
 }
 
 /**

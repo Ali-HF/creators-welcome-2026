@@ -140,9 +140,23 @@ window.CW26Api = (function () {
       };
     }
 
+    function generateRandomId(existingPasses) {
+      const existingSet = new Set(existingPasses.map(p => (p.passId || '').toUpperCase()));
+      let id;
+      let attempts = 0;
+      do {
+        const num = Math.floor(1000 + Math.random() * 9000);
+        id = `#CW26-${num}`;
+        attempts++;
+        if (attempts > 10000) {
+          id = `#CW26-${Math.floor(10000 + Math.random() * 90000)}`;
+        }
+      } while (existingSet.has(id));
+      return id;
+    }
+
     if (action === 'generatePass') {
-      const nextNum = passes.length + 1;
-      const passId = `#CW26-${String(nextNum).padStart(3, '0')}`;
+      const passId = generateRandomId(passes);
       const newPass = {
         passId,
         name: payload.name || 'Anonymous',
@@ -168,10 +182,9 @@ window.CW26Api = (function () {
     if (action === 'batchGeneratePasses') {
       const items = payload.items || [];
       const generatedPasses = [];
-      let startNum = passes.length + 1;
 
-      items.forEach((item, idx) => {
-        const passId = `#CW26-${String(startNum + idx).padStart(3, '0')}`;
+      items.forEach((item) => {
+        const passId = generateRandomId(passes);
         const newPass = {
           passId,
           name: item.name || 'Attendee',
@@ -192,8 +205,8 @@ window.CW26Api = (function () {
       return {
         success: true,
         count: generatedPasses.length,
-        startPassId: generatedPasses[0] ? generatedPasses[0].passId : '#CW26-001',
-        endPassId: generatedPasses[generatedPasses.length - 1] ? generatedPasses[generatedPasses.length - 1].passId : '#CW26-001',
+        startPassId: generatedPasses[0] ? generatedPasses[0].passId : '#CW26-1000',
+        endPassId: generatedPasses[generatedPasses.length - 1] ? generatedPasses[generatedPasses.length - 1].passId : '#CW26-1000',
         passes: generatedPasses
       };
     }
